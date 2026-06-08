@@ -1,0 +1,11 @@
+ir-datasets==0.5.9
+rank-bm25==0.2.2
+sentence-transformers==2.7.0
+scikit-learn==1.4.2
+nltk==3.8.1
+spacy==3.7.4
+streamlit==1.35.0
+numpy==1.26.4
+pandas==2.2.2
+tqdm==4.66.4
+pyserini==0.22.0

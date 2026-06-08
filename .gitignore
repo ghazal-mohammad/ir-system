@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.venv/
+
+# Data (too large for GitHub)
+data/clinical_trials/
+data/msmarco/
+*.jsonl
+*.tsv
+*.gz
+
+# Models (too large)
+models/
+indexes/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ir_datasets cache
+~/.ir_datasets/
