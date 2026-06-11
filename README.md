@@ -41,10 +41,15 @@ ir-system/
 │   ├── rag_service.py
 │   ├── ltr_service.py
 │   └── evaluation_service.py
-├── notebooks/                      # offline training only (01 → 10)
+│   ├── search_engine.py            # orchestrates services into one query pipeline
+├── api/
+│   └── main.py                     # API Gateway (FastAPI) — REST endpoint per service
+├── notebooks/                      # offline training only (01 → 11)
 ├── scripts/
 │   ├── build_database.py           # populate the raw-docs SQLite DB
 │   ├── build_faiss.py              # build FAISS index for fast embedding search
+│   ├── evaluate_before_after.py    # before/after evaluation + charts
+│   ├── run_api.bat / run_api.sh    # run API Gateway locally
 │   ├── run_ui.bat                  # run UI locally (Windows)
 │   └── run_ui.sh                   # run UI locally (Linux/Mac)
 ├── ui/
@@ -93,6 +98,21 @@ python scripts/build_faiss.py --dataset msmarco
 # 5. Run the UI
 streamlit run ui/app.py        # or scripts/run_ui.bat on Windows
 ```
+
+## SOA — Service Communication
+
+The system follows a Service-Oriented Architecture: each service
+(preprocessing, indexing, retrieval models, refinement, clustering, LTR,
+RAG, evaluation, document store) is an independent module, orchestrated
+by `services/search_engine.py`.
+
+Two interchangeable communication modes:
+
+- **In-process** (default) — the UI calls the engine directly. Fastest.
+- **REST API** — run the gateway (`uvicorn api.main:app --port 8000`),
+  then start the UI with `IR_API_URL=http://localhost:8000`.
+  Every service is exposed and testable independently at
+  `http://localhost:8000/docs` (Swagger UI).
 
 ---
 

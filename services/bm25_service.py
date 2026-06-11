@@ -18,7 +18,8 @@ def bm25_score(tf: int, df: int, num_docs: int, doc_len: int,
 
 def retrieve_bm25(query_tokens: list, inverted_index: dict,
                   doc_lengths: dict, avg_dl: float,
-                  top_k: int = 1000) -> list:
+                  top_k: int = 1000, k1: float = K1, b: float = B) -> list:
+    """k1 and b are tunable per query (exposed in the UI)."""
     num_docs = len(doc_lengths)
     scores = defaultdict(float)
 
@@ -29,7 +30,7 @@ def retrieve_bm25(query_tokens: list, inverted_index: dict,
         df = len(doc_dict)
         for doc_id, tf in doc_dict.items():
             dl = doc_lengths.get(doc_id, 1)
-            scores[doc_id] += bm25_score(tf, df, num_docs, dl, avg_dl)
+            scores[doc_id] += bm25_score(tf, df, num_docs, dl, avg_dl, k1=k1, b=b)
 
     ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     results = []
