@@ -48,9 +48,12 @@ def main(dataset):
     doc_lengths = load_json(f'{p}_doc_lengths.json')
     avg_dl = load_bm25_params(f'{p}_bm25_params.pkl')['avg_dl']
     vocab = build_vocab_from_index(index)
+    # official TREC-DL binarization for msmarco is relevance >= 2
+    min_rel = 2 if dataset == 'msmarco' else 1
     queries = load_json(f'{p}_queries_processed.json')
-    qrels = {qid: {d: r for d, r in docs.items() if r >= 1}
+    qrels = {qid: {d: r for d, r in docs.items() if r >= min_rel}
              for qid, docs in load_json(f'{p}_qrels.json').items()}
+    qrels = {qid: docs for qid, docs in qrels.items() if docs}
 
     vectorizer, doc_matrix, tfidf_doc_ids = load_tfidf_matrix(p)
     emb_model = load_model()

@@ -25,7 +25,8 @@ from services.hybrid_service import hybrid_parallel_two, hybrid_serial
 from services.query_refinement_service import build_vocab_from_index, refine_query
 from services.clustering_service import load_clustering, assign_query_to_cluster
 from services.ltr_service import load_ltr_model, rerank_with_ltr
-from services.rag_service import load_rag_model, generate_answer
+from services.rag_service import (
+    load_rag_model, generate_answer, generate_answer_gemini)
 
 
 DATA_DIR = os.environ.get('IR_DATA_DIR', os.path.join(
@@ -233,14 +234,26 @@ def search(query: str, prefix: str, model_name: str, top_k: int = 10,
 
 def rag_answer(query: str, prefix: str, model_name: str = 'BM25',
                use_refinement: bool = False, use_clustering: bool = False,
-               use_ltr: bool = False, k1: float = 1.5, b: float = 0.75) -> dict:
-    """Retrieve top documents then generate an answer (RAG)."""
+               use_ltr: bool = False, k1: float = 1.5, b: float = 0.75,
+               backend: str = 'local') -> dict:
+    """
+    Retrieve top documents then generate an answer (RAG).
+    backend: 'local' (flan-t5, offline) or 'gemini' (free Gemini API).
+    """
     t0 = time.time()
     out = search(query, prefix, model_name, top_k=5,
                  use_refinement=use_refinement, use_clustering=use_clustering,
                  use_ltr=use_ltr, k1=k1, b=b)
-    rag = generate_answer(query, out['results'], out['raw_docs'],
-                          pipeline=get_rag(), max_docs=5)
+    if backend == 'gemini':
+        rag = generate_answer_gemini(query, out['results'], out['raw_docs'],
+                                     max_docs=5)
+        if rag.get('error'):  # fall back to the local model
+            rag = generate_answer(query, out['results'], out['raw_docs'],
+                                  pipeline=get_rag(), max_docs=5)
+            rag['note'] = 'Gemini unavailable — answered with the local model.'
+    else:
+        rag = generate_answer(query, out['results'], out['raw_docs'],
+                              pipeline=get_rag(), max_docs=5)
     rag['retrieved_docs'] = out['results']
     rag['elapsed'] = round(time.time() - t0, 3)
     return rag

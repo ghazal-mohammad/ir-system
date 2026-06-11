@@ -42,13 +42,13 @@ def call_rag(**kwargs):
         import requests
         payload = {
             'query': kwargs['query'], 'dataset': kwargs['prefix'],
-            'model': kwargs['model_name'],
+            'model': kwargs['model_name'], 'backend': kwargs['backend'],
             'k1': kwargs['k1'], 'b': kwargs['b'],
         }
         return requests.post(f'{API_URL}/rag', json=payload, timeout=120).json()
     return engine.rag_answer(
         kwargs['query'], kwargs['prefix'], kwargs['model_name'],
-        k1=kwargs['k1'], b=kwargs['b'])
+        k1=kwargs['k1'], b=kwargs['b'], backend=kwargs['backend'])
 
 
 def db_ready(prefix):
@@ -174,6 +174,14 @@ with tab_chat:
     st.caption(f'Answers are generated from the top documents retrieved by '
                f'**{model_name}** on **{dataset_label}**.')
 
+    backend_label = st.radio(
+        'Answer model', ['Local (flan-t5, offline)', 'Gemini API (free)'],
+        horizontal=True)
+    rag_backend = 'gemini' if backend_label.startswith('Gemini') else 'local'
+    if rag_backend == 'gemini' and not os.environ.get('GEMINI_API_KEY'):
+        st.warning('Set the GEMINI_API_KEY environment variable to use the '
+                   'Gemini API — otherwise the local model is used as fallback.')
+
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
@@ -195,10 +203,13 @@ with tab_chat:
             with st.spinner('Retrieving documents and generating answer...'):
                 t0 = time.time()
                 rag = call_rag(query=user_msg, prefix=prefix,
-                               model_name=model_name, k1=bm25_k1, b=bm25_b)
+                               model_name=model_name, backend=rag_backend,
+                               k1=bm25_k1, b=bm25_b)
                 elapsed = rag.get('elapsed', time.time() - t0)
 
             st.write(rag['answer'])
+            if rag.get('note'):
+                st.caption(rag['note'])
             st.caption(f'⏱️ {elapsed:.2f}s')
             if rag['sources']:
                 with st.expander('Sources'):

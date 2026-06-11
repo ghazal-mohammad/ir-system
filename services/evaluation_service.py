@@ -2,15 +2,17 @@ import math
 from collections import defaultdict
 
 
-def load_qrels(dataset) -> dict:
+def load_qrels(dataset, min_rel: int = 1) -> dict:
     """
     Load qrels from an ir_datasets dataset object.
     Returns: { query_id: { doc_id: relevance_grade } }
-    Keeps only relevance >= 1.
+    min_rel: minimum relevance grade counted as relevant.
+    Note: for TREC-DL (msmarco) the official binarization for MAP/Recall
+    is relevance >= 2; for CT2021 use >= 1.
     """
     qrels = defaultdict(dict)
     for qrel in dataset.qrels_iter():
-        if qrel.relevance >= 1:
+        if qrel.relevance >= min_rel:
             qrels[qrel.query_id][qrel.doc_id] = qrel.relevance
     return dict(qrels)
 

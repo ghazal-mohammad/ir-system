@@ -71,6 +71,7 @@ class RagRequest(BaseModel):
     query: str
     dataset: str = 'ct2021'
     model: str = 'BM25'
+    backend: str = 'local'  # 'local' (flan-t5) or 'gemini' (free API)
     k1: float = Field(1.5, ge=0.0, le=5.0)
     b: float = Field(0.75, ge=0.0, le=1.0)
 
@@ -117,7 +118,7 @@ def search_endpoint(req: SearchRequest):
 def rag_endpoint(req: RagRequest):
     check_dataset(req.dataset)
     return engine.rag_answer(req.query, req.dataset, req.model,
-                             k1=req.k1, b=req.b)
+                             k1=req.k1, b=req.b, backend=req.backend)
 
 
 @app.get('/document/{dataset}/{doc_id}')
