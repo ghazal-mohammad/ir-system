@@ -42,7 +42,10 @@ def retrieve_tfidf_fast(query_text: str, vectorizer, doc_matrix,
                          doc_ids: list, top_k: int = 1000) -> list:
     q_vec = vectorizer.transform([query_text])
     scores = (doc_matrix @ q_vec.T).toarray().squeeze()
-    top_indices = np.argsort(scores)[::-1][:top_k]
+    # argpartition is O(n) instead of a full O(n log n) sort
+    k = min(top_k, len(scores))
+    top_indices = np.argpartition(scores, -k)[-k:]
+    top_indices = top_indices[np.argsort(scores[top_indices])[::-1]]
     results = []
     for rank, idx in enumerate(top_indices, start=1):
         if scores[idx] == 0:

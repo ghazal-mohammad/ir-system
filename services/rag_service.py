@@ -5,14 +5,15 @@ MODEL_NAME = 'google/flan-t5-base'
 _pipeline = None
 
 
-def load_rag_model():
+def load_rag_model(max_new_tokens: int = 128):
+    # 128 tokens keeps CPU generation well under the 20s response budget
     global _pipeline
     if _pipeline is None:
         from transformers import pipeline
         _pipeline = pipeline(
             'text2text-generation',
             model=MODEL_NAME,
-            max_new_tokens=200,
+            max_new_tokens=max_new_tokens,
             device=-1
         )
     return _pipeline

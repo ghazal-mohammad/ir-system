@@ -106,6 +106,57 @@ def evaluate_run(all_results: dict, qrels: dict,
     return {'per_query': per_query, 'aggregated': aggregated}
 
 
+# ── Charts (used in the evaluation notebook and the report) ─────────────────
+
+def plot_model_comparison(model_scores: dict, title: str = 'Model Comparison',
+                          save_path: str = None):
+    """
+    Grouped bar chart of evaluation metrics per model.
+    model_scores: { model_name: aggregated_metrics_dict }
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    models = list(model_scores.keys())
+    metrics = [k for k in model_scores[models[0]] if k != 'num_queries']
+
+    x = np.arange(len(metrics))
+    width = 0.8 / len(models)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    for i, model in enumerate(models):
+        values = [model_scores[model].get(m, 0.0) for m in metrics]
+        bars = ax.bar(x + i * width, values, width, label=model)
+        ax.bar_label(bars, fmt='%.3f', fontsize=7)
+
+    ax.set_xticks(x + width * (len(models) - 1) / 2)
+    ax.set_xticklabels(metrics)
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel('Score')
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(axis='y', alpha=0.3)
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150)
+        print(f'Chart saved: {save_path}')
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_before_after(before: dict, after: dict, feature_name: str,
+                      save_path: str = None):
+    """
+    Bar chart comparing metrics before vs after enabling an additional feature.
+    before/after: aggregated metrics dicts from evaluate_run.
+    """
+    plot_model_comparison(
+        {'Before (baseline)': before, f'After ({feature_name})': after},
+        title=f'Evaluation Before vs After — {feature_name}',
+        save_path=save_path)
+
+
 def print_results_table(model_scores: dict):
     """
     model_scores: { model_name: aggregated_metrics_dict }

@@ -73,6 +73,92 @@ def assign_query_to_cluster(query_embedding: np.ndarray, km_model) -> int:
     return int(km_model.predict(query_embedding.reshape(1, -1))[0])
 
 
+# ── Charts (clustering evaluation for the report) ───────────────────────────
+
+def plot_elbow_and_silhouette(opt_result: dict, save_path: str = None):
+    """Plot elbow (inertia) and silhouette score curves from find_optimal_k."""
+    import matplotlib.pyplot as plt
+
+    inertias = opt_result['inertias']
+    sils = opt_result['silhouette_scores']
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+
+    ax1.plot(list(inertias.keys()), list(inertias.values()), 'o-')
+    ax1.set_xlabel('K')
+    ax1.set_ylabel('Inertia')
+    ax1.set_title('Elbow Method')
+    ax1.grid(alpha=0.3)
+
+    ax2.plot(list(sils.keys()), list(sils.values()), 'o-', color='green')
+    ax2.axvline(opt_result['best_k'], color='red', linestyle='--',
+                label=f"best K = {opt_result['best_k']}")
+    ax2.set_xlabel('K')
+    ax2.set_ylabel('Silhouette Score')
+    ax2.set_title('Silhouette Analysis')
+    ax2.legend()
+    ax2.grid(alpha=0.3)
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150)
+        print(f'Chart saved: {save_path}')
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_cluster_scatter(embeddings: np.ndarray, labels: np.ndarray,
+                         sample_size: int = 5000, save_path: str = None):
+    """2D PCA projection of the clusters."""
+    import matplotlib.pyplot as plt
+    from sklearn.decomposition import PCA
+
+    if len(embeddings) > sample_size:
+        idx = np.random.choice(len(embeddings), sample_size, replace=False)
+        emb_sample, lbl_sample = embeddings[idx], labels[idx]
+    else:
+        emb_sample, lbl_sample = embeddings, labels
+
+    points = PCA(n_components=2, random_state=42).fit_transform(emb_sample)
+
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(points[:, 0], points[:, 1], c=lbl_sample,
+                          cmap='tab10', s=4, alpha=0.6)
+    plt.colorbar(scatter, label='Cluster')
+    plt.title('Document Clusters (PCA 2D projection)')
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150)
+        print(f'Chart saved: {save_path}')
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_cluster_sizes(labels: np.ndarray, save_path: str = None):
+    """Bar chart of how many documents fall in each cluster."""
+    import matplotlib.pyplot as plt
+    from collections import Counter
+
+    counts = Counter(labels.tolist())
+    cids = sorted(counts)
+    plt.figure(figsize=(8, 4))
+    plt.bar([str(c) for c in cids], [counts[c] for c in cids])
+    plt.xlabel('Cluster')
+    plt.ylabel('Documents')
+    plt.title('Cluster Sizes')
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150)
+        print(f'Chart saved: {save_path}')
+        plt.close()
+    else:
+        plt.show()
+
+
 def save_clustering(labels: np.ndarray, km_model, path_prefix: str):
     np.save(f'{path_prefix}_cluster_labels.npy', labels)
     with open(f'{path_prefix}_km_model.pkl', 'wb') as f:
